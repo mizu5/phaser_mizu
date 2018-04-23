@@ -36,12 +36,14 @@
             var platforms;
             var score = 0;
             var scoreText;
+            var bombs;
             var game = new Phaser.Game(config);
             function preload()
             {
                 this.load.image('sky','assets/sky.png');
                 this.load.image('ground','assets/platform.png');
                 this.load.image('star','assets/star.png');
+                this.load.image('bomb','assets/bomb.png');
                 this.load.spritesheet('dude','assets/dude.png',{frameWidth: 32, frameHeight: 48})
             }
             
@@ -50,11 +52,15 @@
                 this.add.image(400,300,'sky');
                 platforms = this.physics.add.staticGroup();
                 platforms.create(400, 568, 'ground').setScale(2).refreshBody();
-                platforms.create(200,200, 'ground');
-                platforms.create(600,380, 'ground');
+                platforms.create(700,100, 'ground');
+                platforms.create(600,400, 'ground');
+                platforms.create(100,250, 'ground');                
                 player = this.physics.add.sprite(100, 450,'dude');
                 player.setBounce(0.2);
                 player.setCollideWorldBounds(true);
+                bombs = this.physics.add.group();
+                this.physics.add.collider(bombs,platforms);
+                this.physics.add.collider(player,bombs,hitBomb,null,this);
                 
                 this.anims.create({
                     key:'left',
@@ -94,6 +100,24 @@
             	star.disableBody(true,true);
             	score += 10;
             	scoreText.setText('Score: ' + score);
+                
+                if(stars.countActive(true) === 0 ){
+                    stars.children.iterate(function(child){
+                       child.enableBody(true, child.x, 0, true, true); 
+                    });
+                    var x = (player.x < 400) ? Phaser.Math.Between(400, 800) : Phaser.Math.Between(0,400);
+                    var bomb = bombs.create(x, 16, 'bomb');
+                    bomb.setBounce(1);
+                    bomb.setCollideWorldBounds(true);
+                    bomb.setVelocity(Phaser.Math.Between(-200, 200), 20);
+                    bomb.allowGravity = false;
+                }
+            }
+            function hitBomb(player,bomb){
+                this.physics.pause();
+                player.setTint(0xff0000);
+                player.anims.play('turn');
+                gameOver = true;
             }
             function update()
             {
